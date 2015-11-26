@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintWriter;
 
 import javax.swing.JFileChooser;
 
@@ -12,6 +13,7 @@ import fiji.util.gui.GenericDialogPlus;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.WindowManager;
+import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
 
 /**
@@ -102,6 +104,26 @@ public class ParticleSizerDaemon_ implements PlugIn {
 			
 			IJ.saveAsTiff(binaryImp, coOpPath+"/bin.tif");
 			IJ.saveAsTiff(rtAsImg, coOpPath+"/rt.tif");
+			
+			//Close windows
+			histImp.close();
+			resultImp.close();
+			binaryImp.close();
+			rtAsImg.close();
+			ResultsTable.getResultsWindow().close();
+			
+			//Update do.txt
+			PrintWriter writer;
+			try {
+				writer = new PrintWriter(doTXT);
+				writer.print("DONE;bin.tif;rt.tif");
+				writer.close();
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			
 		}
 		else if(command=="STOP"){
 			

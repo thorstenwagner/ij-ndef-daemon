@@ -2,6 +2,8 @@ package de.biomedical_imaging.ij.ndef.daemon;
 
 import fiji.util.gui.GenericDialogPlus;
 import ij.IJ;
+import ij.ImagePlus;
+import ij.WindowManager;
 import ij.plugin.PlugIn;
 
 /**
@@ -13,13 +15,28 @@ import ij.plugin.PlugIn;
  */
 public class ParticleSizerDaemon_ implements PlugIn {
 
-	private String coOpPath = "";
+	
+	private String coOpPath = ""; /** Cooperation path */
 	
 	private final String PREF_COOPPATH = "ndef.daemon.cooppath";
 	
 	@Override
 	public void run(String arg) {
 		showGUI();
+		// Run the particle analyzer with current settings
+		
+		// Get the results and save them in the cooperation path
+		int idHist = Integer.parseInt(ij.Prefs.get("ndef.result.histid", "-1"));
+		int idImgWithResultOverlay  = Integer.parseInt(ij.Prefs.get("ndef.result.imagewithoverlayid", "-1"));
+		int idBinary = Integer.parseInt(ij.Prefs.get("ndef.result.binaryid", "-1"));
+		
+		if(idHist == -1 || idImgWithResultOverlay == -1 || idBinary == -1){
+			throw new IllegalStateException("Missing some images - did the ParticleSizer run?");
+		}
+		
+		ImagePlus histImp = WindowManager.getImage(idHist);
+		ImagePlus resultImp = WindowManager.getImage(idImgWithResultOverlay);
+		ImagePlus binaryImp = WindowManager.getImage(idBinary);
 		
 	}
 	

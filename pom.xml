@@ -42,9 +42,9 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	
  	<dependencies>
 		<dependency>
-   	 		<groupId>net.imagej</groupId>
-   	 		<artifactId>ij</artifactId>
-  	 		<version>1.49r</version>
+  			<groupId>sc.fiji</groupId>
+  			<artifactId>fiji-lib</artifactId>
+ 			 <version>2.1.1</version>
 		</dependency>
  	</dependencies>
 	<developers>

@@ -110,7 +110,7 @@ public class ParticleSizerDaemon_ implements PlugIn {
 			resultImp.close();
 			binaryImp.close();
 			rtAsImg.close();
-			ResultsTable.getResultsWindow().close();
+			ResultsTable.getResultsWindow().close(false);
 			
 			//Update do.txt
 			PrintWriter writer;

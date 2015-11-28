@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 
 import javax.swing.JFileChooser;
 
@@ -43,7 +44,7 @@ public class ParticleSizerDaemon_ implements PlugIn {
 
 	private String coOpPath = "";
 	/** Cooperation path */
-	private boolean beChatty = false;
+	public final static boolean beChatty = false;
 	private final String PREF_COOPPATH = "ndef.daemon.cooppath";
 	private final String FILENAME_BINARY_RESULT = "bin.tif";
 	private final String FILENAME_RESULTSTABLE_IMAGE = "rt.tif";
@@ -51,24 +52,32 @@ public class ParticleSizerDaemon_ implements PlugIn {
 	private File coOpFolder;
 	@Override
 	public void run(String arg) {
-
-		if (beChatty) {
-			IJ.log("RUN");
-		}
 		showGUI();
 
 		// Read files from
 		doTXT = new File(coOpPath + "/do.txt");
 		coOpFolder = new File(coOpPath);
 		if (!doTXT.exists()) {
-			IJ.log("There is no do.txt in " + coOpPath);
-			throw new IllegalStateException("There is no do.txt in " + coOpPath);
+			if (beChatty) {
+				IJ.log("DO FILE DOES NOT EXIST - CREATE NEW ONE");
+			}
+			PrintWriter writer = null;
+			try {
+				writer = new PrintWriter(doTXT);
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			writer.println("IDLE");
+			writer.close();
 		}
-		FileAlterationMonitor monitor = new FileAlterationMonitor(5 * 1000);
+		
+		FileAlterationMonitor monitor = new FileAlterationMonitor(2 * 1000);
 		FileAlterationObserver observer = new FileAlterationObserver(coOpFolder);
-		FileAlterationListener listener = new DoFileListener(monitor, this);
+		DoFileListener listener = new DoFileListener(monitor, this);
 		observer.addListener(listener);
 		monitor.addObserver(observer);
+		
 		
 		
 		try {
@@ -78,9 +87,7 @@ public class ParticleSizerDaemon_ implements PlugIn {
 			IJ.log(e1.getMessage());
 			e1.printStackTrace();
 		}
-		if(beChatty){
-			IJ.log("Finished");
-		}
+		listener.analyseDoFile(doTXT);
 	}
 	
 	public String[] getReadCommandAndFilename(File doFile){
@@ -110,16 +117,28 @@ public class ParticleSizerDaemon_ implements PlugIn {
 				return com;
 	}
 
-	public String[] doAnalysis(String command, String filename) {
+	/**
+	 * 
+	 * @param command
+	 * @param imgname
+	 * @return Return the filenames of the result files. If an error occurs the first field 'ERROR'
+	 */
+	public String[] doAnalysis(String command, String imgname) {
 		// Run the particle analyzer with current settings
 
 		if (beChatty) {
-			IJ.log("Try to open: " + coOpPath + "/" + filename);
+			IJ.log("Try to open: " + coOpPath + "/" + imgname);
 		}
-		IJ.openImage(coOpPath + "/" + filename).show();
+		
+		ImagePlus img = IJ.openImage(coOpPath + "/" + imgname);
+		if(img == null){
+				IJ.error("The file "+imgname+" could not be found");
+				String[] err = {"ERROR"};
+				return err;
+		}
+		img.show();
 		IJ.run("Particle Sizer");
 		IJ.run("Results table to image");
-
 		// Get the results and save them in the cooperation path
 		int idHist = Integer.parseInt(ij.Prefs.get("ndef.result.histid", "-1"));
 		int idImgWithResultOverlay = Integer.parseInt(ij.Prefs.get(
@@ -161,16 +180,6 @@ public class ParticleSizerDaemon_ implements PlugIn {
 
 	private void showGUI() {
 		loadPreferences();
-		/*
-		 * GenericDialogPlus gdp = new
-		 * GenericDialogPlus("Particle Sizer Daemon");
-		 * gdp.addFileField("Do TXT: ", coOpPath);
-		 * 
-		 * gdp.showDialog();
-		 * 
-		 * if(gdp.wasCanceled()){ return; }
-		 */
-
 		JFileChooser fc = new JFileChooser(coOpPath);
 		fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 		int returnValue = fc.showOpenDialog(null);

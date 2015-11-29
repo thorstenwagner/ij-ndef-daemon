@@ -48,12 +48,17 @@ public class ParticleSizerDaemon_ implements PlugIn {
 	private final String PREF_COOPPATH = "ndef.daemon.cooppath";
 	private final String FILENAME_BINARY_RESULT = "bin.tif";
 	private final String FILENAME_RESULTSTABLE_IMAGE = "rt.tif";
+	private FileAlterationMonitor doFileMonitor;
+	private boolean restoreBinarySetting;
 	private File doTXT;
 	private File coOpFolder;
 	@Override
 	public void run(String arg) {
 		showGUI();
-
+		
+		//Prepare ParticleAnalyzer Settings
+		restoreBinarySetting = ij.Prefs.get("ndef.showBinaryResult", false);
+		ij.Prefs.set("ndef.showBinaryResult", true);
 		// Read files from
 		doTXT = new File(coOpPath + "/do.txt");
 		coOpFolder = new File(coOpPath);
@@ -72,22 +77,35 @@ public class ParticleSizerDaemon_ implements PlugIn {
 			writer.close();
 		}
 		
-		FileAlterationMonitor monitor = new FileAlterationMonitor(2 * 1000);
+		doFileMonitor = new FileAlterationMonitor(2 * 1000);
 		FileAlterationObserver observer = new FileAlterationObserver(coOpFolder);
-		DoFileListener listener = new DoFileListener(monitor, this);
+		DoFileListener listener = new DoFileListener(this);
 		observer.addListener(listener);
-		monitor.addObserver(observer);
+		doFileMonitor.addObserver(observer);
 		
 		
 		
 		try {
-			monitor.start();
+			doFileMonitor.start();
 
 		} catch (Exception e1) {
 			IJ.log(e1.getMessage());
 			e1.printStackTrace();
 		}
 		listener.analyseDoFile(doTXT);
+	}
+	
+	public void stopMonitoring(){
+		try {
+			doFileMonitor.stop();
+			if (ParticleSizerDaemon_.beChatty) {
+				IJ.log("Monitor stopped");
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		ij.Prefs.set("ndef.showBinaryResult", restoreBinarySetting);
 	}
 	
 	public String[] getReadCommandAndFilename(File doFile){

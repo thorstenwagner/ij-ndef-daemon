@@ -12,12 +12,9 @@ import org.apache.commons.io.monitor.FileAlterationMonitor;
 import org.apache.commons.io.monitor.FileAlterationObserver;
 
 public class DoFileListener extends FileAlterationListenerAdaptor {
-	private FileAlterationMonitor monitor;
 	private ParticleSizerDaemon_ daemon;
 
-	public DoFileListener(FileAlterationMonitor monitor,
-			ParticleSizerDaemon_ daemon) {
-		this.monitor = monitor;
+	public DoFileListener(ParticleSizerDaemon_ daemon) {
 		this.daemon = daemon;
 	}
 
@@ -43,12 +40,7 @@ public class DoFileListener extends FileAlterationListenerAdaptor {
 
 			if (resultFilenames[0].equals("ERROR")) {
 				res = "ERROR";
-				try {
-					monitor.stop();
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				daemon.stopMonitoring();
 				IJ.error("An error occured. Stop monitoring do.txt.");
 			} else {
 				// Build String
@@ -68,24 +60,10 @@ public class DoFileListener extends FileAlterationListenerAdaptor {
 			}
 
 		} else if (com[0].equals("STOP")) {
-			try {
-				monitor.stop();
-				if (ParticleSizerDaemon_.beChatty) {
-					IJ.log("Monitor stopped");
-				}
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				IJ.log("Monitor stopped");
-				e.printStackTrace();
-			}
+			daemon.stopMonitoring();
 		} else if (com[0].equals("ERROR")) {
-			try {
-				monitor.stop();
-				IJ.error("An error occured. Stop monitoring do.txt.");
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			IJ.error("An error occured. Stop monitoring do.txt.");
+			daemon.stopMonitoring();
 		} else if (com[0].equals("IDLE")) {
 			if (ParticleSizerDaemon_.beChatty) {
 				IJ.log("Idle");

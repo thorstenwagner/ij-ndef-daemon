@@ -57,8 +57,10 @@ public class ParticleSizerDaemon_ implements PlugIn {
 		showGUI();
 		
 		//Prepare ParticleAnalyzer Settings
+		
 		restoreBinarySetting = ij.Prefs.get("ndef.showBinaryResult", false);
 		ij.Prefs.set("ndef.showBinaryResult", true);
+
 		// Read files from
 		doTXT = new File(coOpPath + "/do.txt");
 		coOpFolder = new File(coOpPath);
@@ -197,6 +199,7 @@ public class ParticleSizerDaemon_ implements PlugIn {
 	}
 
 	private void showGUI() {
+		
 		loadPreferences();
 		JFileChooser fc = new JFileChooser(coOpPath);
 		fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -204,6 +207,7 @@ public class ParticleSizerDaemon_ implements PlugIn {
 		if (returnValue == JFileChooser.APPROVE_OPTION) {
 			coOpPath = fc.getSelectedFile().getPath();
 		}
+
 
 		savePreferences();
 	}

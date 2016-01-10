@@ -45,7 +45,7 @@ public class DoFileListener extends FileAlterationListenerAdaptor {
 			} else {
 				// Build String
 				res = "DONE;";
-				for (int i = 0; i < resultFilenames.length - 1; i++) {
+				for (int i = 0; i < resultFilenames.length -1; i++) {
 					res += resultFilenames[i] + ";";
 				}
 				res += resultFilenames[resultFilenames.length - 1];

@@ -7,8 +7,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 
 import org.apache.commons.io.monitor.FileAlterationListener;
 import org.apache.commons.io.monitor.FileAlterationListenerAdaptor;
@@ -19,6 +21,7 @@ import fiji.util.gui.GenericDialogPlus;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.WindowManager;
+import ij.gui.YesNoCancelDialog;
 import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
 
@@ -46,10 +49,13 @@ public class ParticleSizerDaemon_ implements PlugIn {
 	/** Cooperation path */
 	public final static boolean beChatty = false;
 	private final String PREF_COOPPATH = "ndef.daemon.cooppath";
+	private final String PREF_REMEMBER_COOPPATH = "ndef.auto.rememberCooperationFolder";
 	private final String FILENAME_BINARY_RESULT = "bin.tif";
 	private final String FILENAME_RESULTSTABLE_IMAGE = "rt.tif";
+	private final String FILENAME_CONTOUR_IMAGE = "contours.tif";
 	private FileAlterationMonitor doFileMonitor;
 	private boolean restoreBinarySetting;
+	private boolean restoreNoPlotting;
 	private File doTXT;
 	private File coOpFolder;
 	@Override
@@ -59,7 +65,9 @@ public class ParticleSizerDaemon_ implements PlugIn {
 		//Prepare ParticleAnalyzer Settings
 		
 		restoreBinarySetting = ij.Prefs.get("ndef.showBinaryResult", false);
+		restoreNoPlotting = ij.Prefs.get("ndef.noPlotting", false);
 		ij.Prefs.set("ndef.showBinaryResult", true);
+		ij.Prefs.set("ndef.noPlotting", true);
 
 		// Read files from
 		doTXT = new File(coOpPath + "/do.txt");
@@ -108,6 +116,7 @@ public class ParticleSizerDaemon_ implements PlugIn {
 			e.printStackTrace();
 		}
 		ij.Prefs.set("ndef.showBinaryResult", restoreBinarySetting);
+		ij.Prefs.set("ndef.noPlotting", restoreNoPlotting);
 	}
 	
 	public String[] getReadCommandAndFilename(File doFile){
@@ -141,7 +150,7 @@ public class ParticleSizerDaemon_ implements PlugIn {
 	 * 
 	 * @param command
 	 * @param imgname
-	 * @return Return the filenames of the result files. If an error occurs the first field 'ERROR'
+	 * @return Return the filenames of the result files. If an error occurs the first field 'ERROR'. If ellipse fitting was used, the second field is "null"
 	 */
 	public String[] doAnalysis(String command, String imgname) {
 		// Run the particle analyzer with current settings
@@ -159,6 +168,13 @@ public class ParticleSizerDaemon_ implements PlugIn {
 		img.show();
 		IJ.run("Particle Sizer");
 		IJ.run("Results table to image");
+		boolean ellipseModeWasUsed = ij.Prefs.get("ndef.useEllipseFittingMode", false);
+		if(ellipseModeWasUsed){
+			IJ.run("Ellipse contour data as image");
+		}else{
+			IJ.run("Blob contour data as image");
+		}
+		int contourDataID = Integer.parseInt(ij.Prefs.get("ndef.result.contourImgID", "-1"));
 		// Get the results and save them in the cooperation path
 		int idHist = Integer.parseInt(ij.Prefs.get("ndef.result.histid", "-1"));
 		int idImgWithResultOverlay = Integer.parseInt(ij.Prefs.get(
@@ -178,38 +194,59 @@ public class ParticleSizerDaemon_ implements PlugIn {
 		ImagePlus resultImp = WindowManager.getImage(idImgWithResultOverlay);
 		ImagePlus binaryImp = WindowManager.getImage(idBinary);
 		ImagePlus rtAsImg = WindowManager.getImage(idRTasImage);
-
-		if (binaryImp == null || rtAsImg == null) {
-			throw new RuntimeException(
-					"Binary or ResultsTable-Image could not be found");
+		ImagePlus contourAsImg = WindowManager.getImage(contourDataID);
+		ArrayList<String> res = new ArrayList<String>();
+		//When ellipse fitting is used, there is no meaningfull binary image
+		if(binaryImp!=null){
+			IJ.saveAsTiff(binaryImp, coOpPath + "/" + FILENAME_BINARY_RESULT);
+			binaryImp.changes = false;
+			binaryImp.close();
+			res.add(FILENAME_BINARY_RESULT);
+		}else{
+			res.add("null");
 		}
-
-		IJ.saveAsTiff(binaryImp, coOpPath + "/" + FILENAME_BINARY_RESULT);
+	
 		IJ.saveAsTiff(rtAsImg, coOpPath + "/" + FILENAME_RESULTSTABLE_IMAGE);
-
+		IJ.saveAsTiff(contourAsImg, coOpPath + "/" + FILENAME_CONTOUR_IMAGE);
 		// Close windows
+		histImp.changes = false;
 		histImp.close();
+		resultImp.changes = false;
 		resultImp.close();
-		binaryImp.close();
+		
+		rtAsImg.changes = false;
 		rtAsImg.close();
+		contourAsImg.changes =false;
+		contourAsImg.close();
 		ResultsTable.getResultsWindow().close(false);
 		
-		String[] result = {FILENAME_BINARY_RESULT, FILENAME_RESULTSTABLE_IMAGE};
+		String[] result = {FILENAME_BINARY_RESULT, FILENAME_RESULTSTABLE_IMAGE,FILENAME_CONTOUR_IMAGE};
 		return result;
 	}
 
 	private void showGUI() {
-		
-		loadPreferences();
-		JFileChooser fc = new JFileChooser(coOpPath);
-		fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-		int returnValue = fc.showOpenDialog(null);
-		if (returnValue == JFileChooser.APPROVE_OPTION) {
-			coOpPath = fc.getSelectedFile().getPath();
+		boolean useOldPath = ij.Prefs.get(PREF_REMEMBER_COOPPATH, false);
+		if(useOldPath){
+			coOpPath = ij.Prefs.get(PREF_COOPPATH, IJ.getDirectory("home"));
 		}
-
-
-		savePreferences();
+		else{
+				
+			loadPreferences();
+			JFileChooser fc = new JFileChooser(coOpPath);
+			fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+			int returnValue = fc.showOpenDialog(null);
+			if (returnValue == JFileChooser.APPROVE_OPTION) {
+				coOpPath = fc.getSelectedFile().getPath();
+			}
+	
+			int result = JOptionPane.showConfirmDialog(null, "Remember path " + coOpPath + " and skip the selection next time?","Save path",JOptionPane.YES_NO_OPTION);
+			if(result==JOptionPane.YES_OPTION){
+				ij.Prefs.set(PREF_REMEMBER_COOPPATH, true);
+			}else{
+				ij.Prefs.set(PREF_REMEMBER_COOPPATH, false);
+			}
+			savePreferences();
+		}
 	}
 
 	private void loadPreferences() {

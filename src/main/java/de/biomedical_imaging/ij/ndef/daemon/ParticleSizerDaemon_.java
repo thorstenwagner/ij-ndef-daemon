@@ -190,7 +190,6 @@ public class ParticleSizerDaemon_ implements PlugIn {
 					"Missing some images - did the ParticleSizer run?");
 		}
 
-		ImagePlus histImp = WindowManager.getImage(idHist);
 		ImagePlus resultImp = WindowManager.getImage(idImgWithResultOverlay);
 		ImagePlus binaryImp = WindowManager.getImage(idBinary);
 		ImagePlus rtAsImg = WindowManager.getImage(idRTasImage);
@@ -209,8 +208,6 @@ public class ParticleSizerDaemon_ implements PlugIn {
 		IJ.saveAsTiff(rtAsImg, coOpPath + "/" + FILENAME_RESULTSTABLE_IMAGE);
 		IJ.saveAsTiff(contourAsImg, coOpPath + "/" + FILENAME_CONTOUR_IMAGE);
 		// Close windows
-		histImp.changes = false;
-		histImp.close();
 		resultImp.changes = false;
 		resultImp.close();
 		

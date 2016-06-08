@@ -56,6 +56,7 @@ public class ParticleSizerDaemon_ implements PlugIn {
 	private FileAlterationMonitor doFileMonitor;
 	private boolean restoreBinarySetting;
 	private boolean restoreNoPlotting;
+	private boolean restoreRectangleSettings;
 	private File doTXT;
 	private File coOpFolder;
 	@Override
@@ -66,9 +67,10 @@ public class ParticleSizerDaemon_ implements PlugIn {
 		
 		restoreBinarySetting = ij.Prefs.get("ndef.showBinaryResult", false);
 		restoreNoPlotting = ij.Prefs.get("ndef.noPlotting", false);
+		restoreRectangleSettings = ij.Prefs.get("ndef.doSelectRegion", true);
 		ij.Prefs.set("ndef.showBinaryResult", true);
 		ij.Prefs.set("ndef.noPlotting", true);
-
+		ij.Prefs.set("ndef.doSelectRegion", false);
 		// Read files from
 		doTXT = new File(coOpPath + "/do.txt");
 		coOpFolder = new File(coOpPath);
@@ -117,6 +119,7 @@ public class ParticleSizerDaemon_ implements PlugIn {
 		}
 		ij.Prefs.set("ndef.showBinaryResult", restoreBinarySetting);
 		ij.Prefs.set("ndef.noPlotting", restoreNoPlotting);
+		ij.Prefs.set("ndef.doSelectRegion", restoreRectangleSettings);
 	}
 	
 	public String[] getReadCommandAndFilename(File doFile){
@@ -132,6 +135,9 @@ public class ParticleSizerDaemon_ implements PlugIn {
 					reader = new BufferedReader(new FileReader(doFile));
 					line = reader.readLine();
 					reader.close();
+					if(line==null){
+						return new String[]{"IDLE"};
+					}
 				} catch (FileNotFoundException e) {
 					// TODO Auto-generated catch block
 					IJ.error("do.txt was not found");
@@ -176,7 +182,6 @@ public class ParticleSizerDaemon_ implements PlugIn {
 		}
 		int contourDataID = Integer.parseInt(ij.Prefs.get("ndef.result.contourImgID", "-1"));
 		// Get the results and save them in the cooperation path
-		int idHist = Integer.parseInt(ij.Prefs.get("ndef.result.histid", "-1"));
 		int idImgWithResultOverlay = Integer.parseInt(ij.Prefs.get(
 				"ndef.result.imagewithoverlayid", "-1"));
 		int idBinary = Integer.parseInt(ij.Prefs.get("ndef.result.binaryid",
@@ -184,8 +189,9 @@ public class ParticleSizerDaemon_ implements PlugIn {
 		int idRTasImage = Integer.parseInt(ij.Prefs.get(
 				"ndef.result.rtAsImageID", "-1"));
 
-		if (idHist == -1 || idImgWithResultOverlay == -1 || idBinary == -1) {
+		if (idImgWithResultOverlay == -1 || idBinary == -1) {
 			IJ.error("Missing some images - did the ParticleSizer run?");
+			stopMonitoring();
 			throw new IllegalStateException(
 					"Missing some images - did the ParticleSizer run?");
 		}

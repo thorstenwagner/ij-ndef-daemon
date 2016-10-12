@@ -221,6 +221,7 @@ public class ParticleSizerDaemon_ implements PlugIn {
 		rtAsImg.close();
 		contourAsImg.changes =false;
 		contourAsImg.close();
+		ResultsTable.getResultsTable().reset();
 		ResultsTable.getResultsWindow().close(false);
 		
 		String[] result = {FILENAME_BINARY_RESULT, FILENAME_RESULTSTABLE_IMAGE,FILENAME_CONTOUR_IMAGE};

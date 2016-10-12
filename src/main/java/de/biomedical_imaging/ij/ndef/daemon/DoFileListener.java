@@ -1,6 +1,7 @@
 package de.biomedical_imaging.ij.ndef.daemon;
 
 import ij.IJ;
+import ij.measure.ResultsTable;
 
 import java.io.File;
 import java.io.FileNotFoundException;

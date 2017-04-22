@@ -172,6 +172,10 @@ public class ParticleSizerDaemon_ implements PlugIn {
 				return err;
 		}
 		img.show();
+		ResultsTable rt = ResultsTable.getResultsTable();
+		if(rt != null){
+			rt.reset();
+		}
 		IJ.run("Particle Sizer");
 		IJ.run("Results table to image");
 		boolean ellipseModeWasUsed = ij.Prefs.get("ndef.useEllipseFittingMode", false);
